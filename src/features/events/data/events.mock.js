@@ -1,0 +1,115 @@
+import {
+    Ticket, Music, Mic, Drama
+} from 'lucide-react';
+
+export const EVENTS_DATA = [
+    {
+        id: 1,
+        title: "שלמה ארצי - הופעה חגיגית",
+        artist: "שלמה ארצי",
+        venue: "זאפה אמפי שוני",
+        source: "זאפה",
+        city: "בנימינה",
+        country: "IL",
+        date: "2023-11-15",
+        time: "21:00",
+        price: 249,
+        category: "music",
+        image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=800",
+        description: "שלמה ארצי במופע חורף מיוחד באמפי שוני. כל הלהיטים הגדולים מכל הזמנים בערב בלתי נשכח תחת כיפת השמיים.",
+        ticketLink: "https://www.zappa-club.co.il",
+        tags: ["רומנטי", "ישראלי", "מומלץ"]
+    },
+    {
+        id: 2,
+        title: "אדיר מילר - אלתורים",
+        artist: "אדיר מילר",
+        venue: "היכל התרבות",
+        source: "Ticketmaster",
+        city: "תל אביב",
+        country: "IL",
+        date: "2023-11-18",
+        time: "21:30",
+        price: 159,
+        category: "standup",
+        image: "https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&q=80&w=800",
+        description: "מופע האלתורים המפורסם של אדיר מילר. ערב של צחוק בלתי פוסק שבו הקהל הוא חלק מהמופע.",
+        ticketLink: "https://www.tmisrael.co.il",
+        tags: ["קורע מצחוק", "מבוקש"]
+    },
+    {
+        id: 3,
+        title: "בלקן ביט בוקס",
+        artist: "Balkan Beat Box",
+        venue: "בארבי",
+        source: "בארבי",
+        city: "תל אביב",
+        country: "IL",
+        date: "2023-11-20",
+        time: "22:00",
+        price: 110,
+        category: "music",
+        image: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=800",
+        description: "ההרכב הבינלאומי חוזר לבארבי להרים את הגג עם אנרגיות שיעיפו אתכם באוויר.",
+        ticketLink: "https://www.barby.co.il",
+        tags: ["מסיבה", "עמידה"]
+    },
+    {
+        id: 4,
+        title: "עלובי החיים",
+        artist: "תיאטרון הבימה",
+        venue: "תיאטרון הבימה",
+        source: "הבימה",
+        city: "תל אביב",
+        country: "IL",
+        date: "2023-11-25",
+        time: "20:00",
+        price: 320,
+        category: "theater",
+        image: "https://images.unsplash.com/photo-1503095392269-27528ca38116?auto=format&fit=crop&q=80&w=800",
+        description: "המחזמר המצליח בכל הזמנים בהפקה חדשה ומרשימה של התיאטרון הלאומי.",
+        ticketLink: "https://www.habima.co.il",
+        tags: ["קלאסיקה", "דרמה"]
+    },
+    {
+        id: 5,
+        title: "רביד פלוטניק",
+        artist: "רביד פלוטניק",
+        venue: "מועדון הגריי",
+        source: "Gray",
+        city: "מודיעין",
+        country: "IL",
+        date: "2023-11-22",
+        time: "21:30",
+        price: 135,
+        category: "music",
+        image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800",
+        description: "רביד פלוטניק מגיע לגריי מודיעין למופע להקה מלא. כל השירים מהאלבום החדש ועוד הפתעות.",
+        ticketLink: "https://grayclub.co.il",
+        tags: ["היפ הופ", "אנרגטי"]
+    },
+    {
+        id: 6,
+        title: "פסטיבל הג'אז",
+        artist: "אמנים שונים",
+        venue: "נמל אילת",
+        source: "Eventim",
+        city: "אילת",
+        country: "IL",
+        date: "2023-12-01",
+        time: "19:00",
+        price: 280,
+        category: "festival",
+        image: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&q=80&w=800",
+        description: "פסטיבל הג'אז הבינלאומי חוזר לאילת עם האמנים הגדולים מהארץ ומהעולם.",
+        ticketLink: "https://www.eventim.co.il",
+        tags: ["פסטיבל", "ג'אז"]
+    }
+];
+
+export const CATEGORIES = [
+    { id: 'all', label: 'הכל', icon: Ticket },
+    { id: 'music', label: 'מוזיקה', icon: Music },
+    { id: 'standup', label: 'סטנדאפ', icon: Mic },
+    { id: 'theater', label: 'תיאטרון', icon: Drama },
+];
