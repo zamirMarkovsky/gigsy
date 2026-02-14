@@ -1,23 +1,56 @@
 
-import React, { useState } from 'react';
-import { Search, Zap } from 'lucide-react';
-import { EVENTS_DATA } from '../data/events.mock';
+import React from 'react';
+import { Zap, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { events as EVENTS_DATA } from '../data/events.mock';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { EventCard } from '../components/EventCard';
+import { useTranslation } from '../../layout/context/TranslationContext';
+import { useFilter } from '../../layout/context/FilterContext';
 
-export const HomeView = ({ onEventClick }) => {
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [searchQuery, setSearchQuery] = useState('');
+export const HomeView = () => {
+    const { translate, t, language, direction } = useTranslation();
+    const {
+        searchQuery, setSearchQuery, // Re-enabled search in HomeView
+        selectedCategory, setSelectedCategory,
+        selectedDateFilter,
+        selectedLocationFilter
+    } = useFilter();
+    const navigate = useNavigate();
 
     const filteredEvents = EVENTS_DATA.filter(event => {
+        // 1. Text Search
+        const title = t(event, 'title').toLowerCase();
+        const city = t(event, 'city').toLowerCase();
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = title.includes(query) || city.includes(query);
+
+        // 2. Category
         const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-        const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            event.city.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+
+        // 3. Location Filter
+        const matchesLocation = selectedLocationFilter === 'all' || event.region === selectedLocationFilter;
+
+        // 4. Date Filter
+        let matchesDate = true;
+        if (selectedDateFilter !== 'all') {
+            const eventDate = new Date(event.date);
+            const today = new Date();
+
+            if (selectedDateFilter === 'today') {
+                matchesDate = eventDate.toDateString() === today.toDateString();
+            } else if (selectedDateFilter === 'weekend') {
+                const day = eventDate.getDay();
+                matchesDate = day === 5 || day === 6;
+            }
+        }
+
+        return matchesCategory && matchesSearch && matchesLocation && matchesDate;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return (
         <div className="pb-24 animate-in fade-in duration-500">
+            {/* Header Area */}
             <div className="bg-slate-900 sticky top-0 z-10 pb-4 pt-4 px-4 shadow-lg rounded-b-2xl border-b border-indigo-900/50">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
@@ -30,24 +63,50 @@ export const HomeView = ({ onEventClick }) => {
                             </h1>
                         </div>
                     </div>
-                    <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-white font-bold border border-slate-700">א</div>
                 </div>
-                <div className="relative">
-                    <input type="text" placeholder="מה בא לך לראות היום?" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-slate-800/80 text-white p-3 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500 border border-slate-700 transition-all" />
-                    <Search className="absolute left-3 top-3.5 text-slate-500 w-5 h-5" />
+
+                {/* Search Bar Restored under Headline */}
+                <div className="relative mb-4">
+                    <input
+                        type="text"
+                        placeholder={translate('search_placeholder')}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={`
+                            w-full bg-slate-800/80 text-white p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500 border border-slate-700 transition-all
+                            ${direction === 'rtl' ? 'pr-10' : 'pl-10'}
+                        `}
+                    />
+                    <Search className={`absolute top-3.5 text-slate-500 w-5 h-5 ${direction === 'rtl' ? 'right-3' : 'left-3'}`} />
                 </div>
 
                 <CategoryFilter selectedCategory={selectedCategory} onSelect={setSelectedCategory} />
 
             </div>
+
+            {/* Event Grid */}
             <div className="p-4 space-y-4">
-                <h2 className="text-slate-200 font-bold mb-2 text-lg">{searchQuery ? `תוצאות חיפוש (${filteredEvents.length})` : 'הופעות חמות ב-Gigsy'}</h2>
+                <h2 className="text-slate-200 font-bold mb-2 text-lg">
+                    {searchQuery
+                        ? (language === 'he' ? `תוצאות חיפוש (${filteredEvents.length})` : `Search Results (${filteredEvents.length})`)
+                        : (language === 'he' ? 'הופעות חמות ב-Gigsy' : 'Hot Events in Gigsy')
+                    }
+                </h2>
+
                 {filteredEvents.length === 0 ? (
-                    <div className="text-center py-10 text-slate-500"><p>לא מצאנו כלום... אולי נסה לחפש משהו אחר?</p></div>
+                    <div className="text-center py-10 text-slate-500">
+                        <p>{language === 'he' ? 'לא מצאנו כלום... נסה לשנות את הסינון.' : 'We found nothing... try changing sorting/filters.'}</p>
+                    </div>
                 ) : (
-                    filteredEvents.map(event => (
-                        <EventCard key={event.id} event={event} onClick={() => onEventClick(event)} />
-                    ))
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredEvents.map(event => (
+                            <EventCard
+                                key={event.id}
+                                event={event}
+                                onClick={() => navigate(`/event/${event.id}`)}
+                            />
+                        ))}
+                    </div>
                 )}
             </div>
         </div>

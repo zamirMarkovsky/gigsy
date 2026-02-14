@@ -1,37 +1,25 @@
 
-import React, { useState } from 'react';
-import { HomeView, EventDetailsView } from './features/events';
-import { PlaygroundView } from './features/playground';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MainLayout } from './features/layout';
+import { HomeView } from './features/events/pages/HomeView';
+import { EventDetailsView } from './features/events/pages/EventDetailsView';
+import { PlaygroundView } from './features/playground/PlaygroundView';
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedEvent, setSelectedEvent] = useState(null);
-
-  const handleEventClick = (event) => {
-    setSelectedEvent(event);
-    setActiveTab('details');
-    window.scrollTo(0, 0);
-  };
-
-  const handleBack = () => {
-    setActiveTab('home');
-    setSelectedEvent(null);
-  };
-
+function App() {
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-200 font-sans selection:bg-indigo-500/30" dir="rtl">
-      {/* Temporary Navigation for testing */}
-      <div className="fixed top-0 left-0 p-2 z-50 opacity-20 hover:opacity-100 transition-opacity">
-        <button onClick={() => setActiveTab('playground')} className="text-xs bg-slate-800 text-white px-2 py-1 rounded border border-slate-700">Dev: Playground</button>
-      </div>
-
-      {activeTab === 'playground' ? (
-        <div dir="ltr"><PlaygroundView /></div>
-      ) : activeTab === 'home' ? (
-        <HomeView onEventClick={handleEventClick} />
-      ) : (
-        <EventDetailsView selectedEvent={selectedEvent} onBack={handleBack} />
-      )}
-    </div>
+    <BrowserRouter>
+      <MainLayout>
+        <Routes>
+          <Route path="/" element={<HomeView />} />
+          <Route path="/event/:id" element={<EventDetailsView />} />
+          <Route path="/playground" element={<PlaygroundView />} />
+          {/* Fallback route - could be a 404 page or redirect to home */}
+          <Route path="*" element={<HomeView />} />
+        </Routes>
+      </MainLayout>
+    </BrowserRouter>
   );
 }
+
+export default App;

@@ -1,130 +1,355 @@
 
 import React, { useState } from 'react';
-import {
-    ArrowLeft, Share2, Calendar, Clock, Sparkles, Info,
-    PartyPopper, X, Utensils, MapPin, Map, Ticket
-} from 'lucide-react';
-import { formatDate } from '../../../core/utils/date.utils';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Ticket, Calendar, Clock, MapPin, Sparkles, Utensils, Info, ExternalLink, Footprints, Car } from 'lucide-react';
+import { events as EVENTS_DATA } from '../data/events.mock';
+import { useTranslation } from '../../layout/context/TranslationContext';
+import { useTheme } from '../../layout/context/ThemeContext';
+import { getDayName, formatDateDDMM } from '../../../core/utils/date.utils';
 import { getArtistBio, getNightPlan } from '../../../core/services/ai.service';
 
-export const EventDetailsView = ({ selectedEvent, onBack }) => {
-    const [aiLoading, setAiLoading] = useState(false);
-    const [aiResult, setAiResult] = useState(null);
-    const [aiMode, setAiMode] = useState(null);
+export const EventDetailsView = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { t, direction, language } = useTranslation();
+    const { theme } = useTheme();
 
-    if (!selectedEvent) return null;
+    // AI Toggle Logic: Default is null (closed)
+    const [activeTab, setActiveTab] = useState(null);
+    const [imageError, setImageError] = useState(false);
 
-    const handleShare = async () => {
-        const shareData = {
-            title: `הולכים ל-${selectedEvent.title} עם Gigsy!`,
-            text: `מצאתי הופעה שווה ב-Gigsy: ${selectedEvent.title} ב${selectedEvent.venue}. מה אומר?`,
-            url: selectedEvent.ticketLink
-        };
-        if (navigator.share) {
-            try { await navigator.share(shareData); } catch (err) { console.log(err); }
-        } else {
-            window.open(`https://wa.me/?text=${encodeURIComponent(shareData.text)}`, '_blank');
+    const [aiContent, setAiContent] = useState({ about: null, plan: null }); // Plan will be object now
+    const [loading, setLoading] = useState({ about: false, plan: false });
+
+    // Find event
+    const event = EVENTS_DATA.find(e => e.id.toString() === id);
+
+    // Update Document Title
+    React.useEffect(() => {
+        if (event) {
+            document.title = `${t(event, 'artist')} - ${t(event, 'title')} | Gigsy`;
+        }
+    }, [event, t]);
+
+    if (!event) return null;
+
+    const ArrowIcon = ArrowLeft;
+
+    // Helper to calculate dinner time (2 hours before)
+    const getDinnerTime = () => {
+        const [hours, minutes] = event.time.split(':');
+        const d = new Date();
+        d.setHours(parseInt(hours), parseInt(minutes));
+        d.setHours(d.getHours() - 2);
+        return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const handleTabChange = async (tab) => {
+        // Toggle: If same tab clicked, close it (set to null)
+        if (activeTab === tab) {
+            setActiveTab(null);
+            return;
+        }
+
+        setActiveTab(tab);
+
+        // If content exists, just show it
+        if (aiContent[tab] || loading[tab]) return;
+
+        setLoading(prev => ({ ...prev, [tab]: true }));
+        try {
+            let content;
+            if (tab === 'about') {
+                content = await getArtistBio(t(event, 'artist'), language);
+            } else if (tab === 'plan') {
+                const jsonStr = await getNightPlan(t(event, 'title'), t(event, 'city'), event.time, language);
+                try {
+                    // Parser safety
+                    content = JSON.parse(jsonStr);
+                } catch (e) {
+                    console.error("Failed to parse AI JSON", e);
+                    content = { reason: "Could not load plan at this time." };
+                }
+            }
+            setAiContent(prev => ({ ...prev, [tab]: content }));
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(prev => ({ ...prev, [tab]: false }));
         }
     };
 
-    const handleAIAction = async (mode, event) => {
-        if (aiLoading) return;
-        if (aiMode === mode) { setAiMode(null); setAiResult(null); return; }
-
-        setAiMode(mode);
-        setAiLoading(true);
-        setAiResult(null);
-
-        let result;
-        if (mode === 'bio') {
-            result = await getArtistBio(event.artist, event.title);
-        } else if (mode === 'plan') {
-            const rawResult = await getNightPlan(event.title, event.city, event.time);
-            try { result = JSON.parse(rawResult); } catch (e) { result = null; }
-        }
-
-        setAiResult(result);
-        setAiLoading(false);
-    };
+    // Theme Helpers
+    const isDark = theme === 'dark';
+    const cardBg = isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-stone-200';
+    const textColor = isDark ? 'text-white' : 'text-stone-900';
+    const subTextColor = isDark ? 'text-slate-300' : 'text-stone-600';
+    const labelColor = isDark ? 'text-slate-500' : 'text-stone-400';
+    const iconBg = isDark ? 'bg-slate-800' : 'bg-stone-100';
 
     return (
-        <div className="bg-slate-950 min-h-screen pb-24 animate-in slide-in-from-bottom-8 duration-300">
-            <div className="fixed top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-slate-950 to-transparent pointer-events-none">
-                <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-900/40 backdrop-blur-md flex items-center justify-center text-white pointer-events-auto border border-white/5 hover:bg-slate-800 transition-colors"><ArrowLeft className="w-6 h-6" /></button>
-                <button onClick={handleShare} className="w-10 h-10 rounded-full bg-indigo-600/90 hover:bg-indigo-600 backdrop-blur-md flex items-center justify-center text-white pointer-events-auto border border-white/10 transition-colors shadow-lg shadow-indigo-500/30"><Share2 className="w-5 h-5" /></button>
-            </div>
-            <div className="relative h-[45vh] w-full">
-                <img src={selectedEvent.image} alt={selectedEvent.title} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                <div className="absolute bottom-0 p-6 w-full">
-                    <div className="flex gap-2 mb-4">{selectedEvent.tags.map(tag => (<span key={tag} className="px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-md text-xs font-medium text-white border border-white/10">{tag}</span>))}</div>
-                    <h1 className="text-4xl font-black text-white mb-2 leading-tight drop-shadow-lg">{selectedEvent.title}</h1>
-                    <p className="text-slate-300 text-lg flex items-center gap-2 font-medium"><span className="w-1 h-1 bg-indigo-500 rounded-full"></span>{selectedEvent.artist}</p>
-                </div>
-            </div>
-            <div className="px-5 -mt-8 relative z-10">
-                <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 shadow-2xl space-y-8">
-                    <div className="flex justify-between items-center bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-slate-800 p-2.5 rounded-xl text-indigo-400"><Calendar className="w-6 h-6" /></div>
-                            <div><div className="text-xs text-slate-400">תאריך</div><div className="font-bold text-white">{formatDate(selectedEvent.date)}</div></div>
-                        </div>
-                        <div className="w-px h-8 bg-slate-800"></div>
-                        <div className="flex items-center gap-3">
-                            <div className="bg-slate-800 p-2.5 rounded-xl text-indigo-400"><Clock className="w-6 h-6" /></div>
-                            <div><div className="text-xs text-slate-400">שעה</div><div className="font-bold text-white">{selectedEvent.time}</div></div>
+        <div className="animate-in slide-in-from-bottom-4 duration-500 flex flex-col min-h-full">
+            {/* Hero Image */}
+            <div className="relative h-64 md:h-96 w-full shrink-0 bg-slate-900">
+                {!imageError ? (
+                    <img
+                        src={event.image}
+                        alt={t(event, 'title')}
+                        className="w-full h-full object-cover masking-gradient-b"
+                        onError={() => setImageError(true)}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-600">
+                        <div className="text-center">
+                            <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                            <span className="text-lg font-bold opacity-50">No Image Found</span>
                         </div>
                     </div>
-                    <div className="space-y-4">
-                        <h3 className="text-white font-bold flex items-center gap-2 text-lg"><Sparkles className="w-5 h-5 text-amber-400 fill-amber-400" />Gigsy AI</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => handleAIAction('bio', selectedEvent)} className={`relative p-4 rounded-2xl border transition-all text-right overflow-hidden group ${aiMode === 'bio' ? 'bg-indigo-900/40 border-indigo-500/50' : 'bg-slate-800 hover:bg-slate-750 border-slate-700'}`}>
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110" />
-                                <Info className="w-6 h-6 text-indigo-400 mb-3" /><div className="text-base font-bold text-white">מי זה?</div><div className="text-xs text-slate-400 mt-1">הסבר קצר על האמן</div>
-                            </button>
-                            <button onClick={() => handleAIAction('plan', selectedEvent)} className={`relative p-4 rounded-2xl border transition-all text-right overflow-hidden group ${aiMode === 'plan' ? 'bg-amber-900/20 border-amber-500/50' : 'bg-slate-800 hover:bg-slate-750 border-slate-700'}`}>
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/10 to-transparent rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110" />
-                                <PartyPopper className="w-6 h-6 text-amber-400 mb-3" /><div className="text-base font-bold text-white">תכנן לי ערב</div><div className="text-xs text-slate-400 mt-1">מסעדה ודרינק ליד</div>
+                )}
+                <div className={`absolute inset-0 bg-gradient-to-t ${isDark ? 'from-slate-950 via-slate-950/20' : 'from-[#F5F5F0] via-transparent'} to-transparent`} />
+
+                <button
+                    onClick={() => navigate(-1)}
+                    className="absolute top-4 start-4 p-2 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-black/50 transition-colors z-10"
+                >
+                    <ArrowIcon className={`w-6 h-6 ${direction === 'rtl' ? 'rotate-180' : ''}`} />
+                </button>
+            </div>
+
+            {/* Content Wrapper */}
+            <div className="px-4 -mt-20 relative z-10 flex flex-col flex-1">
+                <div className={`${cardBg} backdrop-blur-md border p-6 rounded-2xl shadow-xl mb-4`}>
+
+                    {/* Header Info */}
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-500 text-xs font-bold mb-2 border border-indigo-500/20">
+                                <Ticket className="w-3 h-3" />
+                                {event.category.toUpperCase()}
+                            </div>
+                            <h1 className={`text-3xl md:text-4xl font-black ${textColor} leading-tight mb-2`}>
+                                {t(event, 'title')}
+                            </h1>
+                            <div className="text-xl text-indigo-500 font-bold">
+                                {t(event, 'artist')}
+                            </div>
+                        </div>
+                        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200'} p-3 rounded-xl border text-center shadow-sm`}>
+                            <div className={`text-sm ${labelColor} font-bold`}>{getDayName(event.date)}</div>
+                            <div className={`text-lg font-black ${textColor}`}>{formatDateDDMM(event.date)}</div>
+                        </div>
+                    </div>
+
+                    {/* Meta Data */}
+                    <div className={`grid gap-4 py-6 border-t ${isDark ? 'border-slate-800/50' : 'border-stone-200'} border-b mb-6`}>
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center text-indigo-500`}>
+                                <Calendar className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className={`text-xs ${labelColor} font-bold uppercase tracking-wider`}>{language === 'he' ? 'תאריך' : 'Date'}</div>
+                                <div className={`${textColor} font-medium`}>{event.date}</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center text-pink-500`}>
+                                <Clock className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className={`text-xs ${labelColor} font-bold uppercase tracking-wider`}>{language === 'he' ? 'שעה' : 'Time'}</div>
+                                <div className={`${textColor} font-medium`}>{event.time}</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center text-cyan-500`}>
+                                <MapPin className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className={`text-xs ${labelColor} font-bold uppercase tracking-wider`}>{language === 'he' ? 'מיקום' : 'Location'}</div>
+                                <div className={`${textColor} font-medium`}>{t(event, 'venue')}, {t(event, 'city')}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Basic Description */}
+                    <div className="mb-8">
+                        <h3 className={`text-lg font-bold ${textColor} mb-2`}>{language === 'he' ? 'פרטים נוספים' : 'Details'}</h3>
+                        <p className={`${subTextColor} leading-relaxed text-sm md:text-base`}>
+                            {t(event, 'description')}
+                        </p>
+                    </div>
+
+                    {/* AI Tabs Buttons */}
+                    <div className="mt-8">
+                        <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar">
+                            {event.category !== 'sports' && (
+                                <button
+                                    onClick={() => handleTabChange('about')}
+                                    className={`
+                                        flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border whitespace-nowrap
+                                        ${activeTab === 'about'
+                                            ? 'bg-indigo-600 text-white border-indigo-500'
+                                            : `${isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-stone-100 text-stone-500 border-stone-200'} hover:opacity-80`
+                                        }
+                                    `}
+                                >
+                                    <Info className="w-4 h-4" />
+                                    {language === 'he' ? 'על האמן (AI)' : 'About Artist (AI)'}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => handleTabChange('plan')}
+                                className={`
+                                    flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border whitespace-nowrap
+                                    ${activeTab === 'plan'
+                                        ? 'bg-purple-600 text-white border-purple-500'
+                                        : `${isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-stone-100 text-stone-500 border-stone-200'} hover:opacity-80`
+                                    }
+                                `}
+                            >
+                                <Utensils className="w-4 h-4" />
+                                {language === 'he' ? 'תכנן לי את הערב (AI)' : 'Plan My Evening (AI)'}
                             </button>
                         </div>
-                        {(aiLoading || aiResult) && (
-                            <div className="mt-4 rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-indigo-500/30 shadow-2xl shadow-indigo-900/20">
-                                <div className="bg-slate-800/80 backdrop-blur-xl p-5">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider"><Sparkles className="w-3 h-3" /> {aiMode === 'bio' ? 'Gigsy Bio' : 'Gigsy Plan'}</div>
-                                        {!aiLoading && (<button onClick={() => { setAiResult(null); setAiMode(null); }} className="text-slate-400 hover:text-white bg-slate-700/50 rounded-full p-1"><X className="w-4 h-4" /></button>)}
+
+                        {/* AI Content Area (Only if activeTab) */}
+                        {activeTab && (
+                            <div className={`
+                                animate-in fade-in zoom-in-95 duration-200
+                                ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-stone-100 border-stone-200'} 
+                                rounded-xl p-6 border min-h-[120px] shadow-inner relative
+                            `}>
+
+                                {loading[activeTab] ? (
+                                    <div className="flex flex-col items-center justify-center h-24 gap-3 text-slate-400 animate-pulse">
+                                        <Sparkles className="w-6 h-6 text-indigo-400 animate-spin-slow" />
+                                        <span className="text-sm">Gemini is thinking...</span>
                                     </div>
-                                    {aiLoading ? (
-                                        <div className="space-y-3 py-2"><div className="h-4 bg-indigo-400/20 rounded-full animate-pulse w-3/4"></div><div className="h-4 bg-indigo-400/20 rounded-full animate-pulse w-1/2"></div><div className="h-4 bg-indigo-400/20 rounded-full animate-pulse w-5/6"></div></div>
-                                    ) : (
-                                        aiMode === 'plan' && typeof aiResult === 'object' && aiResult ? (
-                                            <div className="relative border-r-2 border-slate-600/50 pr-6 space-y-8 mr-1.5 py-2">
-                                                <div className="relative group"><div className="absolute -right-[33px] top-0 w-5 h-5 rounded-full bg-slate-900 border-4 border-emerald-500 z-10"></div><div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 hover:border-emerald-500/30 transition-colors"><div className="flex justify-between items-start mb-2"><div className="flex items-center gap-2 text-emerald-400 text-sm font-bold"><Utensils className="w-4 h-4" />לפני: {aiResult.restaurant?.name}</div></div><p className="text-slate-300 text-sm mb-3 line-clamp-2">{aiResult.restaurant?.description}</p><div className="flex gap-2 items-center mb-4"><span className="text-[10px] uppercase tracking-wide px-2 py-1 rounded bg-slate-800 text-slate-400 font-bold">{aiResult.restaurant?.cuisine}</span></div><a href={`https://www.google.com/search?q=להזמין שולחן ל${aiResult.restaurant?.name} ${selectedEvent.city}`} target="_blank" rel="noopener noreferrer" className="w-full text-center block bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-sm py-2.5 rounded-lg transition-all border border-emerald-500/20 font-medium">הזמן שולחן</a></div></div>
-                                                <div className="relative"><div className="absolute -right-[33px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-900 border-4 border-indigo-500 z-10"></div><div className="text-indigo-200 text-sm font-medium py-1 px-2 bg-indigo-500/10 rounded-lg inline-block border border-indigo-500/20">ההופעה: {selectedEvent.venue} 🎵</div></div>
-                                                <div className="relative group"><div className="absolute -right-[33px] top-0 w-5 h-5 rounded-full bg-slate-900 border-4 border-amber-500 z-10"></div><div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 hover:border-amber-500/30 transition-colors"><div className="flex items-center gap-2 text-amber-400 text-sm font-bold mb-2"><PartyPopper className="w-4 h-4" />אחרי: {aiResult.afterParty?.name}</div><p className="text-slate-300 text-sm mb-4 line-clamp-2">{aiResult.afterParty?.description}</p><a href={`https://www.google.com/maps/search/?api=1&query=${aiResult.afterParty?.name} ${selectedEvent.city}`} target="_blank" rel="noopener noreferrer" className="w-full text-center block bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm py-2.5 rounded-lg transition-all border border-amber-500/20 font-medium">נווט למקום</a></div></div>
+                                ) : aiContent[activeTab] ? (
+                                    <div className="max-w-none">
+
+                                        {/* ABOUT TAB */}
+                                        {activeTab === 'about' && (
+                                            <p className={`whitespace-pre-wrap leading-relaxed ${subTextColor} prose-sm`}>{aiContent['about']}</p>
+                                        )}
+
+                                        {/* PLAN TAB - TIMELINE */}
+                                        {activeTab === 'plan' && aiContent['plan'] && (
+                                            <div className="relative">
+                                                {/* Timeline Line */}
+                                                <div className={`absolute top-2 bottom-2 start-[27px] w-0.5 ${isDark ? 'bg-slate-700' : 'bg-stone-300'}`}></div>
+
+                                                {/* Node 1: Dinner */}
+                                                <div className="relative flex gap-6 mb-8 group">
+                                                    {/* Icon */}
+                                                    <div className={`relative z-10 w-14 h-14 rounded-full ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-stone-300'} border-4 flex items-center justify-center text-purple-500 shrink-0 shadow-lg`}>
+                                                        <Utensils className="w-6 h-6" />
+                                                    </div>
+
+                                                    {/* Content */}
+                                                    <div className="flex-1 pt-1.5">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${isDark ? 'bg-purple-900/40 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
+                                                                {getDinnerTime()}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-stone-200'} p-4 rounded-xl border shadow-sm transition-all hover:shadow-md`}>
+                                                            <div className="mb-2">
+                                                                <a
+                                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(aiContent['plan'].searchQuery || aiContent['plan'].name)}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className={`text-lg font-bold underline hover:text-purple-500 transition-colors flex items-center gap-1 ${textColor}`}
+                                                                >
+                                                                    {aiContent['plan'].name}
+                                                                    <ExternalLink className="w-4 h-4 opacity-50" />
+                                                                </a>
+                                                                <div className={`text-xs ${labelColor} font-bold uppercase`}>{aiContent['plan'].cuisine}</div>
+                                                            </div>
+                                                            <p className={`text-sm ${subTextColor} leading-relaxed`}>
+                                                                {aiContent['plan'].reason}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Connector Info */}
+                                                <div className="relative flex gap-6 mb-8">
+                                                    <div className="w-14 shrink-0 flex justify-center">
+                                                        {/* Just space for line */}
+                                                    </div>
+                                                    <div className="flex-1 -mt-4">
+                                                        <div className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full border ${isDark ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-white border-stone-200 text-stone-500'}`}>
+                                                            {aiContent['plan'].travelTime && aiContent['plan'].travelTime.includes('walk') ? <Footprints className="w-3 h-3" /> : <Car className="w-3 h-3" />}
+                                                            <span>{aiContent['plan'].travelTime || '10 min'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Node 2: Show */}
+                                                <div className="relative flex gap-6">
+                                                    {/* Icon */}
+                                                    <div className={`relative z-10 w-14 h-14 rounded-full ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-stone-300'} border-4 flex items-center justify-center text-indigo-500 shrink-0 shadow-lg`}>
+                                                        <Ticket className="w-6 h-6" />
+                                                    </div>
+
+                                                    {/* Content */}
+                                                    <div className="flex-1 pt-3.5">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${isDark ? 'bg-indigo-900/40 text-indigo-300' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                                {event.time}
+                                                            </span>
+                                                        </div>
+                                                        <h4 className={`text-lg font-bold ${textColor}`}>{t(event, 'title')}</h4>
+                                                        <div className={`text-sm ${labelColor}`}>{t(event, 'venue')}</div>
+                                                    </div>
+                                                </div>
+
                                             </div>
-                                        ) : (<div className="prose prose-invert prose-sm max-w-none text-slate-200 leading-relaxed whitespace-pre-wrap font-light">{aiResult || "משהו השתבש, נסה שוב."}</div>)
-                                    )}
-                                </div>
+                                        )}
+
+                                    </div>
+                                ) : (
+                                    <div className="text-center text-sm text-red-400 py-4">
+                                        Failed to load content. Please try again.
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
-                    <hr className="border-slate-800" />
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center shrink-0 text-indigo-400"><MapPin className="w-6 h-6" /></div>
-                        <div><h3 className="text-white font-bold text-lg mb-1">המיקום</h3><p className="text-slate-400 text-sm mb-2">{selectedEvent.venue}, {selectedEvent.city}</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedEvent.venue}, ${selectedEvent.city}`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-indigo-400 text-sm font-medium hover:text-indigo-300 transition-colors"><Map className="w-3 h-3" />נווט לשם</a></div>
+
+                </div>
+            </div>
+
+            {/* Bottom Sticky Action */}
+            <div className={`sticky bottom-0 mt-auto p-4 z-20 backdrop-blur-xl border-t transition-all ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-[#F5F5F0]/80 border-stone-200'}`}>
+                <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                    <div className="hidden md:block">
+                        <div className={`text-xs ${labelColor}`}>{language === 'he' ? 'מחיר לכרטיס' : 'Price per ticket'}</div>
+                        <div className={`text-2xl font-bold ${textColor}`}>₪{event.price}</div>
                     </div>
-                    <hr className="border-slate-800" />
-                    <div><h3 className="text-white font-bold mb-3 flex items-center gap-2 text-lg"><Info className="w-5 h-5 text-slate-500" />על המופע</h3><p className="text-slate-300 text-sm leading-relaxed font-light">{selectedEvent.description}</p></div>
-                    <div className="flex items-center gap-3 bg-slate-800/50 p-4 rounded-xl border border-slate-800"><div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs text-white font-bold">{selectedEvent.source[0]}</div><div><div className="text-xs text-slate-400">כרטיסים מסופקים ע״י</div><div className="text-sm text-white font-bold">{selectedEvent.source}</div></div></div>
+                    {event.ticketUrl ? (
+                        <a
+                            href={event.ticketUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg shadow-indigo-600/20 transform active:scale-95 transition-all text-center block"
+                        >
+                            {language === 'he' ? 'הזמן כרטיסים עכשיו' : 'Book Tickets Now'} • ₪{event.price}
+                        </a>
+                    ) : (
+                        <button
+                            disabled
+                            onClick={() => alert(language === 'he' ? 'קישור לא זמין' : 'Link not available')}
+                            className={`flex-1 font-bold py-3 md:py-4 rounded-xl text-center block cursor-not-allowed ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-stone-200 text-stone-400'}`}
+                        >
+                            {language === 'he' ? 'לא זמין לרכישה' : 'Not Available'}
+                        </button>
+                    )}
                 </div>
             </div>
-            <div className="fixed bottom-0 w-full bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 p-4 safe-area-pb z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                <div className="flex items-center justify-between max-w-md mx-auto">
-                    <div className="flex flex-col"><span className="text-slate-400 text-xs font-medium">החל מ-</span><span className="text-3xl font-black text-white tracking-tight">₪{selectedEvent.price}</span></div>
-                    <a href={selectedEvent.ticketLink} target="_blank" rel="noopener noreferrer" className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-2xl font-bold shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2 transform active:scale-95"><Ticket className="w-5 h-5" />שריין כרטיס</a>
-                </div>
-            </div>
+
         </div>
     );
 };
