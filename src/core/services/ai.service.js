@@ -2,8 +2,11 @@
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
+// Debug Log (Safety: Do not log the actual key)
+console.log("Gemini Service Init - Key exists?", !!API_KEY);
+
 if (!API_KEY) {
-    console.warn("Missing VITE_GEMINI_API_KEY in environment variables. AI features will not work.");
+    throw new Error("Missing API Key - Check Vercel Environment Variables (VITE_GEMINI_API_KEY)");
 }
 
 export const generateGeminiContent = async (prompt, isJson = false) => {
