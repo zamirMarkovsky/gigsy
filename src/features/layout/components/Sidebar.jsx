@@ -5,7 +5,8 @@ import { useLayout } from '../context/LayoutContext';
 import { useTranslation } from '../context/TranslationContext';
 import { useFilter } from '../context/FilterContext';
 import { useTheme } from '../context/ThemeContext';
-import { Home, Music, Mic, Drama, Users, Bot, X, Zap, Calendar, MapPin, Grid } from 'lucide-react';
+import { useAuth } from '../../auth/context/AuthContext';
+import { Home, Music, Mic, Drama, Users, Bot, X, Zap, Calendar, MapPin, Grid, LogOut } from 'lucide-react';
 
 export const Sidebar = () => {
     const { isMobileMenuOpen, closeMobileMenu } = useLayout();
@@ -16,6 +17,7 @@ export const Sidebar = () => {
         selectedLocationFilter, setSelectedLocationFilter
     } = useFilter();
     const { theme } = useTheme();
+    const { logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -201,17 +203,21 @@ export const Sidebar = () => {
 
                 </div>
 
-                {/* Footer User Profile */}
+                {/* Logout Button */}
                 <div className={`p-4 border-t shrink-0 ${isDark ? 'border-slate-800' : 'border-stone-200'}`}>
-                    <div className={`rounded-xl p-3 flex items-center gap-3 transition-colors cursor-pointer ${isDark ? 'bg-slate-800/50 hover:bg-slate-800' : 'bg-stone-100 hover:bg-stone-200'}`}>
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                            JD
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-stone-900'}`}>John Doe</div>
-                            <div className="text-[10px] text-slate-400 truncate">john@gigsy.com</div>
-                        </div>
-                    </div>
+                    <button
+                        onClick={() => {
+                            logout();
+                            closeMobileMenu();
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isDark
+                                ? 'bg-red-600/10 text-red-400 hover:bg-red-600/20 border border-red-600/20'
+                                : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                            }`}
+                    >
+                        <LogOut className="w-4 h-4" />
+                        <span>{direction === 'rtl' ? 'התנתק' : 'Logout'}</span>
+                    </button>
                 </div>
             </aside>
         </>

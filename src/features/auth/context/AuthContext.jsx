@@ -14,15 +14,13 @@ if (!CORRECT_PASSWORD) {
 }
 
 export const AuthProvider = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        // Check localStorage on mount
-        return localStorage.getItem(AUTH_KEY) === 'true';
-    });
+    // Session-only auth - no localStorage persistence
+    // User must log in every time they visit
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     const login = (password) => {
         if (password === CORRECT_PASSWORD) {
             setIsAuthenticated(true);
-            localStorage.setItem(AUTH_KEY, 'true');
             return true;
         }
         return false;
@@ -30,7 +28,6 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         setIsAuthenticated(false);
-        localStorage.removeItem(AUTH_KEY);
     };
 
     return (
