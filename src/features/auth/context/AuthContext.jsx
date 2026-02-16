@@ -7,6 +7,12 @@ const AuthContext = createContext(null);
 const CORRECT_PASSWORD = import.meta.env.VITE_LOGIN_PASSWORD;
 const AUTH_KEY = 'gigsy_auth';
 
+// Validate password is configured
+if (!CORRECT_PASSWORD) {
+    console.error('❌ VITE_LOGIN_PASSWORD is not set! Login will not work.');
+    console.error('Set it in .env locally or in your hosting platform environment variables.');
+}
+
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         // Check localStorage on mount
