@@ -2,6 +2,7 @@
 import React from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { Footer } from './components/Footer';
 import { LayoutProvider } from './context/LayoutContext';
 import { TranslationProvider, useTranslation } from './context/TranslationContext';
 import { FilterProvider } from './context/FilterContext';
@@ -33,6 +34,9 @@ const LayoutContent = ({ children }) => {
                         {children}
                     </div>
                 </main>
+
+                {/* Footer - appears on all authenticated pages */}
+                <Footer />
             </div>
 
         </div>
