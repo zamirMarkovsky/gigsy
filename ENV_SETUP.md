@@ -10,7 +10,7 @@ When deploying to production (Vercel, Netlify, etc.), you MUST set these environ
 3. Add the following:
 
 ```
-VITE_GEMINI_API_KEY=your_gemini_key
+VITE_GEMINI_API_KEY=your_gemini_api_key
 VITE_LOGIN_PASSWORD=your_login_password
 MONGODB_URI=your_mongodb_connection_string
 ```
