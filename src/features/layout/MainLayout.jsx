@@ -16,7 +16,7 @@ const LayoutContent = ({ children }) => {
     // Theme Styles
     // Dark: bg-slate-950 text-slate-200
     // Light: bg-stone-50 text-stone-900
-    const bgClass = theme === 'dark' ? 'bg-slate-950' : 'bg-[#F5F5F0]'; // Beige/Stone tint
+    const bgClass = theme === 'dark' ? 'bg-slate-950' : 'bg-[#FBFBF0]'; // Light Olive tint
     const textClass = theme === 'dark' ? 'text-slate-200' : 'text-stone-800';
 
     return (

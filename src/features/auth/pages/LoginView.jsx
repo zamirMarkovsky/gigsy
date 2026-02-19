@@ -1,6 +1,8 @@
 // src/features/auth/pages/LoginView.jsx
 import React, { useState } from 'react';
 import { Lock, Zap } from 'lucide-react';
+import logo from '../../../assets/gigsy-logo.png';
+
 import { useAuth } from '../context/AuthContext';
 
 export const LoginView = () => {
@@ -24,8 +26,8 @@ export const LoginView = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                            <Zap className="w-7 h-7 text-white fill-white" />
+                        <div className="w-12 h-12 flex items-center justify-center">
+                            <img src={logo} alt="Gigsy Logo" className="w-10 h-10 object-contain copyright-protected-image" />
                         </div>
                     </div>
                     <h1 className="text-4xl font-black text-white tracking-tight">
@@ -51,8 +53,8 @@ export const LoginView = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Password"
                                 className={`w-full px-4 py-3 bg-slate-900/50 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${error
-                                        ? 'border-red-500 focus:ring-red-500/50 shake'
-                                        : 'border-slate-600 focus:ring-indigo-500/50'
+                                    ? 'border-red-500 focus:ring-red-500/50 shake'
+                                    : 'border-slate-600 focus:ring-indigo-500/50'
                                     }`}
                                 autoFocus
                             />

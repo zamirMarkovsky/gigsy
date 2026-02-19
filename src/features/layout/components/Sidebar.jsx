@@ -1,22 +1,23 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import logo from '../../../assets/gigsy-logo.png';
+
 import { useLayout } from '../context/LayoutContext';
 import { useTranslation } from '../context/TranslationContext';
 import { useFilter } from '../context/FilterContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../../auth/context/AuthContext';
-import { Home, Music, Mic, Drama, Users, Bot, X, Zap, Calendar, MapPin, Grid, LogOut } from 'lucide-react';
+import { Home, Music, Mic, Drama, Grid, X, Calendar, MapPin, LogOut, Moon, Sun, Globe } from 'lucide-react';
 
 export const Sidebar = () => {
     const { isMobileMenuOpen, closeMobileMenu } = useLayout();
-    const { translate, direction } = useTranslation();
+    const { translate, direction, toggleLanguage, language } = useTranslation();
     const {
         selectedCategory, setSelectedCategory,
         selectedDateFilter, setSelectedDateFilter,
         selectedLocationFilter, setSelectedLocationFilter
     } = useFilter();
-    const { theme } = useTheme();
+    const { theme, toggleTheme } = useTheme();
     const { logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -32,13 +33,9 @@ export const Sidebar = () => {
     const categories = [
         { id: 'all', labelKey: 'dashboard', icon: Home },
         { id: 'music', labelKey: 'music', icon: Music },
-        { id: 'sports', labelKey: 'sports', icon: Grid },
         { id: 'theater', labelKey: 'theater', icon: Drama },
-        { id: 'family', labelKey: 'family', icon: Users },
-    ];
-
-    const tools = [
-        { id: 'playground', labelKey: 'playground', icon: Bot, path: '/playground' },
+        { id: 'standup', labelKey: 'standup', icon: Mic },
+        { id: 'sports', labelKey: 'sports', icon: Grid },
     ];
 
     const handleCategoryClick = (id) => {
@@ -57,11 +54,6 @@ export const Sidebar = () => {
         }
     };
 
-    const handleToolClick = (path) => {
-        navigate(path);
-        closeMobileMenu();
-    };
-
     return (
         <>
             {/* Mobile Overlay */}
@@ -75,7 +67,7 @@ export const Sidebar = () => {
             {/* Sidebar Container */}
             <aside className={`
         fixed top-0 bottom-0 z-50 w-72 border-e shadow-2xl transition-transform duration-300 ease-in-out
-        lg:sticky lg:translate-x-0 lg:shadow-none flex flex-col
+        lg:sticky lg:translate-x-0 lg:shadow-none flex flex-col h-screen
         ${sidebarBg}
         ${direction === 'rtl'
                     ? (isMobileMenuOpen ? 'translate-x-0 right-0' : 'translate-x-full right-0')
@@ -83,14 +75,20 @@ export const Sidebar = () => {
                 }
       `}>
                 {/* Logo Area */}
-                <div className={`h-20 flex items-center justify-between px-6 border-b shrink-0 ${isDark ? 'border-slate-800' : 'border-stone-200'}`}>
+                <div className={`flex items-center justify-between px-6 border-b shrink-0 py-3 ${isDark ? 'border-slate-800' : 'border-stone-200'}`}>
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <Zap className="w-5 h-5 text-white fill-white" />
+                        <div className="flex items-center justify-center">
+                            <img src={logo} alt="Gigsy Logo" className="w-9 h-9 object-contain copyright-protected-image" />
                         </div>
-                        <h1 className={`text-2xl font-black tracking-tight flex items-center gap-1 ${isDark ? 'text-white' : 'text-stone-900'}`}>
-                            gigsy<span className="text-indigo-500">.</span>
-                        </h1>
+                        <div className="flex flex-col leading-none">
+                            <h1 className={`font-black tracking-tight leading-none flex items-center gap-0.5 ${isDark ? 'text-white' : 'text-stone-900'}`}
+                                style={{ fontSize: '2.25rem', lineHeight: '2.25rem' }}>
+                                gigsy<span className="text-indigo-500">.</span>
+                            </h1>
+                            <p className={`text-sm font-medium mt-0.5 ${isDark ? 'text-slate-400' : 'text-stone-500'}`}>
+                                {language === 'he' ? 'כרטיסים בלי הדרמה' : 'Tickets without the drama'}
+                            </p>
+                        </div>
                     </div>
                     {/* Close Button (Mobile Only) */}
                     <button onClick={closeMobileMenu} className="lg:hidden text-slate-400 hover:text-white transition-colors">
@@ -98,126 +96,143 @@ export const Sidebar = () => {
                     </button>
                 </div>
 
-                {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+                {/* Main Content — flex-col distributed, no scroll */}
+                <div className="flex-1 flex flex-col justify-between min-h-0 px-4 py-4">
 
-                    {/* Section 1: Discover */}
-                    <div>
-                        <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 px-2 ${headingColor}`}>Discover</h3>
-                        <nav className="space-y-1">
-                            {categories.map((item) => {
-                                const Icon = item.icon;
-                                // Active logic: matches global category AND we are on home page
-                                const isActive = selectedCategory === item.id && location.pathname === '/';
+                    {/* Nav sections */}
+                    <div className="space-y-5">
+                        {/* Section 1: Discover */}
+                        <div>
+                            <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 px-2 ${headingColor}`}>Discover</h3>
+                            <nav className="space-y-0.5">
+                                {categories.map((item) => {
+                                    const Icon = item.icon;
+                                    const isActive = selectedCategory === item.id && location.pathname === '/';
 
-                                return (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleCategoryClick(item.id)}
-                                        className={`
-                            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm text-start
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => handleCategoryClick(item.id)}
+                                            className={`
+                            w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all font-medium text-sm text-start
                             ${isActive ? activeItemBg : inactiveItemColor}
                         `}
-                                    >
-                                        <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-500' : 'text-current'}`} />
-                                        <span>{translate(item.labelKey)}</span>
-                                    </button>
-                                );
-                            })}
-                        </nav>
-                    </div>
+                                        >
+                                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-500' : 'text-current'}`} />
+                                            <span>{translate(item.labelKey)}</span>
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
 
-                    {/* Section 2: Filters */}
-                    <div>
-                        <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 px-2 ${headingColor}`}>{translate('filters')}</h3>
-                        <div className="space-y-4 px-2">
-                            {/* Date Filter */}
-                            <div>
-                                <div className={`flex items-center gap-2 text-sm mb-2 ${isDark ? 'text-slate-300' : 'text-stone-600'}`}>
-                                    <Calendar className="w-4 h-4 opacity-70" />
-                                    <span>{translate('date')}</span>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {['today', 'weekend'].map(filter => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => handleFilterClick('date', filter)}
-                                            className={`text-xs px-2 py-1 rounded-md transition-all border
+                        {/* Section 2: Filters */}
+                        <div>
+                            <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 px-2 ${headingColor}`}>{translate('filters')}</h3>
+                            <div className="space-y-3 px-2">
+                                {/* Date Filter */}
+                                <div>
+                                    <div className={`flex items-center gap-2 text-xs mb-1.5 ${isDark ? 'text-slate-300' : 'text-stone-600'}`}>
+                                        <Calendar className="w-3.5 h-3.5 opacity-70" />
+                                        <span>{translate('date')}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['today', 'weekend'].map(filter => (
+                                            <button
+                                                key={filter}
+                                                onClick={() => handleFilterClick('date', filter)}
+                                                className={`text-xs px-2 py-1 rounded-md transition-all border
                                         ${selectedDateFilter === filter ? filterActiveBg : filterInactiveBg}`}
-                                        >
-                                            {filter === 'today' ? 'Today' : 'Weekend'}
-                                        </button>
-                                    ))}
+                                            >
+                                                {filter === 'today' ? 'Today' : 'Weekend'}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Location Filter */}
-                            <div>
-                                <div className={`flex items-center gap-2 text-sm mb-2 ${isDark ? 'text-slate-300' : 'text-stone-600'}`}>
-                                    <MapPin className="w-4 h-4 opacity-70" />
-                                    <span>{translate('location')}</span>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {['center', 'north', 'south'].map(filter => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => handleFilterClick('location', filter)}
-                                            className={`text-xs px-2 py-1 rounded-md transition-all border capitalize
+                                {/* Location Filter */}
+                                <div>
+                                    <div className={`flex items-center gap-2 text-xs mb-1.5 ${isDark ? 'text-slate-300' : 'text-stone-600'}`}>
+                                        <MapPin className="w-3.5 h-3.5 opacity-70" />
+                                        <span>{translate('location')}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['center', 'north', 'south'].map(filter => (
+                                            <button
+                                                key={filter}
+                                                onClick={() => handleFilterClick('location', filter)}
+                                                className={`text-xs px-2 py-1 rounded-md transition-all border capitalize
                                         ${selectedLocationFilter === filter ? filterActiveBg : filterInactiveBg}`}
-                                        >
-                                            {filter}
-                                        </button>
-                                    ))}
+                                            >
+                                                {filter}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Section 3: Tools */}
-                    <div>
-                        <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 px-2 ${headingColor}`}>Tools</h3>
-                        <nav className="space-y-1">
-                            {tools.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = location.pathname === item.path;
+                    {/* Bottom Actions — always visible at bottom */}
+                    <div className={`pt-4 border-t space-y-1.5 ${isDark ? 'border-slate-800' : 'border-stone-200'}`}>
 
-                                return (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleToolClick(item.path)}
-                                        className={`
-                            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm text-start
-                            ${isActive
-                                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                                : inactiveItemColor
-                                            }
-                        `}
-                                    >
-                                        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-indigo-400'}`} />
-                                        <span>{translate(item.labelKey)}</span>
-                                    </button>
-                                );
-                            })}
-                        </nav>
+                        {/* Theme Toggle Switch */}
+                        <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-white border border-stone-200'}`}>
+                            <div className="flex items-center gap-2">
+                                {isDark ? <Moon className="w-4 h-4 text-indigo-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
+                                <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-stone-600'}`}>
+                                    {language === 'he' ? (isDark ? 'מצב כהה' : 'מצב בהיר') : (isDark ? 'Dark Mode' : 'Light Mode')}
+                                </span>
+                            </div>
+                            <button
+                                onClick={toggleTheme}
+                                className={`
+                                    w-10 h-5 rounded-full relative transition-colors focus:outline-none ring-offset-2 focus:ring-2 ring-indigo-500
+                                    ${isDark ? 'bg-indigo-600' : 'bg-slate-300'}
+                                `}
+                            >
+                                <div className={`
+                                    absolute top-1 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-200
+                                    ${isDark ? 'inset-inline-start-[22px]' : 'inset-inline-start-1'}
+                                `} />
+                            </button>
+                        </div>
+
+                        {/* Language Toggle */}
+                        <button
+                            onClick={toggleLanguage}
+                            className={`
+                                w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all
+                                ${isDark
+                                    ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    : 'text-stone-600 hover:bg-white hover:text-indigo-600 hover:shadow-sm border border-transparent hover:border-stone-200'
+                                }
+                            `}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Globe className="w-4 h-4" />
+                                <span>{language === 'he' ? 'שפה / Language' : 'Language / שפה'}</span>
+                            </div>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-stone-200 text-stone-600'}`}>
+                                {language === 'he' ? 'עברית' : 'EN'}
+                            </span>
+                        </button>
+
+                        {/* Logout Button */}
+                        <button
+                            onClick={() => {
+                                logout();
+                                closeMobileMenu();
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all font-medium text-sm ${isDark
+                                ? 'text-red-400 hover:bg-red-500/10'
+                                : 'text-red-600 hover:bg-red-50'
+                                }`}
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>{direction === 'rtl' ? 'התנתק' : 'Logout'}</span>
+                        </button>
                     </div>
-
-                </div>
-
-                {/* Logout Button */}
-                <div className={`p-4 border-t shrink-0 ${isDark ? 'border-slate-800' : 'border-stone-200'}`}>
-                    <button
-                        onClick={() => {
-                            logout();
-                            closeMobileMenu();
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isDark
-                                ? 'bg-red-600/10 text-red-400 hover:bg-red-600/20 border border-red-600/20'
-                                : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                            }`}
-                    >
-                        <LogOut className="w-4 h-4" />
-                        <span>{direction === 'rtl' ? 'התנתק' : 'Logout'}</span>
-                    </button>
                 </div>
             </aside>
         </>

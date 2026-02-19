@@ -49,7 +49,8 @@ export function useEvents(): UseEventsReturn {
                         image: event.metadata.image,
                         description_he: event.metadata.description_he,
                         description_en: event.metadata.description_en,
-                        ticketUrl: event.source.origin_url
+                        ticketUrl: event.source.origin_url,
+                        source: event.source.name || 'Unknown'
                     }));
 
                     setEvents(transformedEvents);

@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.copyright-protected-image {
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}

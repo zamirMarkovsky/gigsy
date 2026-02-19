@@ -30,7 +30,7 @@ export const TranslationProvider = ({ children }) => {
         'he': {
             'search_placeholder': 'חפש אירועים, הופעות, אמנים...',
             'welcome': 'ברוכים הבאים',
-            'dashboard': 'לוח בקרה',
+            'dashboard': 'כל האירועים',
             'music': 'מוזיקה',
             'sports': 'ספורט',
             'theater': 'תיאטרון',
@@ -45,7 +45,7 @@ export const TranslationProvider = ({ children }) => {
         'en': {
             'search_placeholder': 'Search events, concerts, artists...',
             'welcome': 'Welcome',
-            'dashboard': 'Dashboard',
+            'dashboard': 'All Events',
             'music': 'Music',
             'sports': 'Sports',
             'theater': 'Theater',
